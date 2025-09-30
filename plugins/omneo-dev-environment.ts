@@ -64,7 +64,6 @@ export function omneoDevEnvironment(): Plugin {
       // Start ngrok tunnel
       const tunnelResult = await startNgrokTunnel(port);
       
-      console.log(tunnelResult)
       if (!tunnelResult.success) {
         return;
       }
