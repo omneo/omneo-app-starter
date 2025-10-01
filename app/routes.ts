@@ -2,7 +2,8 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
 export default [
   // Main app routes - these are wrapped by AuthProvider and AuthGuard
-  index("routes/clienteling.tsx"),
+  route("/clienteling", "routes/clienteling/index.tsx"),
+  route("/clienteling/block", "routes/clienteling/block.tsx"),
   
   // API Routes - these are NOT wrapped by auth context and can handle their own authentication
   route("/api/:tenant/webhooks/omneo", "routes/api/$tenant.webhooks.omneo/route.ts"),

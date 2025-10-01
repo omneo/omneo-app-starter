@@ -3,6 +3,7 @@ import { displayOmneoAsciiArt } from "./utils/display";
 import { ConfigManager } from "./utils/config-manager";
 import { startNgrokTunnel, closeNgrokTunnel } from "./utils/ngrok-tunnel";
 import { OmneoWebhookManager } from "./utils/omneo-webhooks";
+import { OmneoClientelingManager } from "./utils/clienteling-apps";
 import { isDevelopmentMode, getServerPort } from "./utils/common";
 
 // Combined Omneo Development Environment Plugin
@@ -16,6 +17,7 @@ export function omneoDevEnvironment(): Plugin {
   // Utility instances
   const configManager = new ConfigManager();
   const webhookManager = new OmneoWebhookManager();
+  const clientelingManager = new OmneoClientelingManager();
 
   return {
     name: 'omneo-dev-environment',
@@ -95,15 +97,33 @@ export function omneoDevEnvironment(): Plugin {
       console.log('✅ Webhooks already configured');
       console.log(`📊 Found ${Object.keys(config.webhooks!).length} configured webhook events`);
       await webhookManager.syncWebhooks(config, tunnelUrl!);
+      
+      // Check if clienteling config exists, if not prompt for setup
+      let updatedConfig = config;
+      if (!clientelingManager.hasClientelingConfig(config)) {
+        console.log('\n📱 No clienteling configuration found');
+        updatedConfig = await clientelingManager.setupClientelingApp(config);
+        configManager.saveConfig(updatedConfig);
+      }
+      
+      // After webhook sync, handle clienteling apps
+      await clientelingManager.syncClientelingApps(updatedConfig);
       return;
     }
 
     // First time setup
     console.log('🆕 First time setup - configuring webhooks...');
     try {
-      const newConfig = await webhookManager.setupWebhooks(tunnelUrl!);
+      let newConfig = await webhookManager.setupWebhooks(tunnelUrl!);
+      
+      // After webhook setup, offer clienteling app setup
+      newConfig = await clientelingManager.setupClientelingApp(newConfig);
+      
       configManager.saveConfig(newConfig);
       await webhookManager.syncWebhooks(newConfig, tunnelUrl!);
+      
+      // Sync clienteling apps if any were configured
+      await clientelingManager.syncClientelingApps(newConfig);
     } catch (error) {
       console.log('❌ Failed to setup webhooks:', error);
     }

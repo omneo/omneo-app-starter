@@ -3,6 +3,7 @@ import readline from "readline";
 import type { OmneoConfig, WebhookEvent } from "./webhook-config";
 import { WEBHOOK_EVENTS } from "./webhook-config";
 import { SYNC_SYMBOL, displayWebhookSummary } from "./display";
+import { OmneoBaseManager } from "./omneo-base";
 
 export interface WebhookSyncResult {
   status: 'created' | 'updated' | 'skipped' | 'error';
@@ -11,25 +12,7 @@ export interface WebhookSyncResult {
   error?: any;
 }
 
-export class OmneoWebhookManager {
-  private omneoClient: Omneo | null = null;
-
-  // Cache Omneo client to avoid recreating it
-  getOmneoClient(): Omneo | null {
-    const omneoToken = process.env.OMNEO_TOKEN;
-    const omneoTenant = process.env.OMNEO_TENANT;
-    
-    if (!omneoToken || !omneoTenant) {
-      console.log('❌ Missing OMNEO_TOKEN or OMNEO_TENANT environment variables.');
-      return null;
-    }
-
-    if (!this.omneoClient) {
-      this.omneoClient = new Omneo({ token: omneoToken, tenant: omneoTenant });
-    }
-    
-    return this.omneoClient;
-  }
+export class OmneoWebhookManager extends OmneoBaseManager {
 
   async setupWebhooks(tunnelUrl: string): Promise<OmneoConfig> {
     const rl = readline.createInterface({
@@ -199,21 +182,4 @@ export class OmneoWebhookManager {
     }
   }
 
-  // Helper function with timeout for webhook operations
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number = 30000): Promise<T> {
-    return Promise.race([
-      promise,
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
-      )
-    ]);
-  }
-
-  private askQuestion(rl: readline.Interface, question: string): Promise<string> {
-    return new Promise((resolve) => {
-      rl.question(question, (answer) => {
-        resolve(answer.trim());
-      });
-    });
-  }
 }

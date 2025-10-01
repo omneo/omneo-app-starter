@@ -112,9 +112,28 @@ export const WEBHOOK_EVENTS = {
   ]
 } as const;
 
+export interface ClientelingApp {
+  handle: string;
+  development: boolean;
+  enabled: boolean;
+  fullscreen: boolean;
+  button: {
+    label: string;
+  };
+  title: string;
+  clienteling: {
+    url: string;
+  };
+  settings: any[];
+}
+
 export interface OmneoConfig {
   webhooks?: {
     [event: string]: boolean; // Just store enabled/disabled
+  };
+  clienteling?: {
+    apps: ClientelingApp[];
+    enabled?: boolean;
   };
   tenant?: string;
   namespace?: string;
