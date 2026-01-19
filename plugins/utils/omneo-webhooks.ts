@@ -40,47 +40,58 @@ export class OmneoWebhookManager extends OmneoBaseManager {
         }
       }
 
-      // Get namespace (default to app name)
-      const defaultNamespace = `omneo-app-starter-${Math.random().toString(36).substring(2, 8)}`
-      const namespace = await this.askQuestion(rl, `Enter webhook namespace (default: ${defaultNamespace}): `) || defaultNamespace;
-
-      console.log('\n📋 Available webhook resources:');
-      const resources = Object.keys(WEBHOOK_EVENTS) as WebhookEvent[];
-      resources.forEach((resource, index) => {
-        console.log(`${index + 1}. ${resource} (${WEBHOOK_EVENTS[resource].length} events)`);
-      });
-
-      const selectedResources = await this.askQuestion(rl, '\n🎯 Select resources (comma-separated numbers, or "all"): ');
+      // Ask if user wants to setup webhooks
+      const setupWebhooks = await this.askQuestion(rl, '\n❓ Would you like to setup webhooks? (y/n): ');
       
-      let webhooksToSetup: string[] = [];
+      let webhooks: { [key: string]: boolean } = {};
+      let namespace = '';
       
-      if (selectedResources.toLowerCase() === 'all') {
-        webhooksToSetup = Object.values(WEBHOOK_EVENTS).flat();
-      } else if (selectedResources.trim()) {
-        try {
-          const indices = selectedResources.split(',').map((n: string) => parseInt(n.trim()) - 1);
-          const validIndices = indices.filter((i: number) => !isNaN(i) && i >= 0 && i < resources.length);
-          
-          if (validIndices.length === 0) {
-            throw new Error('No valid resource selections found');
-          }
-          
-          webhooksToSetup = validIndices.flatMap((i: number) => WEBHOOK_EVENTS[resources[i]]);
-        } catch (error) {
-          console.log('❌ Invalid selection format. Please use comma-separated numbers or "all".');
-          throw error;
-        }
+      if (setupWebhooks.toLowerCase() === 'n' || setupWebhooks.toLowerCase() === 'no') {
+        console.log('⏭️  Skipping webhook setup');
+        const defaultNamespace = `omneo-app-starter-${Math.random().toString(36).substring(2, 8)}`;
+        namespace = defaultNamespace;
       } else {
-        throw new Error('No resources selected');
+        // Get namespace (default to app name)
+        const defaultNamespace = `omneo-app-starter-${Math.random().toString(36).substring(2, 8)}`
+        namespace = await this.askQuestion(rl, `📦 Enter webhook namespace (default: ${defaultNamespace}): `) || defaultNamespace;
+
+        console.log('\n📋 Available webhook resources:');
+        const resources = Object.keys(WEBHOOK_EVENTS) as WebhookEvent[];
+        resources.forEach((resource, index) => {
+          console.log(`${index + 1}. ${resource} (${WEBHOOK_EVENTS[resource].length} events)`);
+        });
+
+        const selectedResources = await this.askQuestion(rl, '\n🎯 Select resources (comma-separated numbers, or "all"): ');
+      
+        let webhooksToSetup: string[] = [];
+        
+        if (selectedResources.toLowerCase() === 'all') {
+          webhooksToSetup = Object.values(WEBHOOK_EVENTS).flat();
+        } else if (selectedResources.trim()) {
+          try {
+            const indices = selectedResources.split(',').map((n: string) => parseInt(n.trim()) - 1);
+            const validIndices = indices.filter((i: number) => !isNaN(i) && i >= 0 && i < resources.length);
+            
+            if (validIndices.length === 0) {
+              throw new Error('No valid resource selections found');
+            }
+            
+            webhooksToSetup = validIndices.flatMap((i: number) => WEBHOOK_EVENTS[resources[i]]);
+          } catch (error) {
+            console.log('❌ Invalid selection format. Please use comma-separated numbers or "all".');
+            throw error;
+          }
+        } else {
+          throw new Error('No resources selected');
+        }
+
+        // Configure webhooks
+        webhooksToSetup.forEach(event => {
+          webhooks[event] = true;
+        });
+
+        console.log(`\n✅ Configured ${webhooksToSetup.length} webhooks`);
       }
-
-      // Configure webhooks
-      const webhooks: { [key: string]: boolean } = {};
-      webhooksToSetup.forEach(event => {
-        webhooks[event] = true; // Just store enabled state
-      });
-
-      console.log(`\n✅ Configured ${webhooksToSetup.length} webhooks`);
       
       const config: OmneoConfig = {
         tenant: tenant.trim(),
@@ -105,10 +116,16 @@ export class OmneoWebhookManager extends OmneoBaseManager {
     }
 
     const webhookUrl = `${tunnelUrl}/api/${config.tenant}/webhooks/omneo`;
+    
+    if (!config.webhooks || Object.keys(config.webhooks).length === 0) {
+      console.log('⏭️  No webhooks configured, skipping sync');
+      return;
+    }
+    
     console.log(`${SYNC_SYMBOL} Syncing webhooks with Omneo API...`);
     
-    if (!config.webhooks || !config.tenant) {
-      console.log('❌ Missing configuration, cannot sync webhooks.');
+    if (!config.tenant) {
+      console.log('❌ Missing tenant configuration, cannot sync webhooks.');
       return;
     }
 

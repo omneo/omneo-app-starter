@@ -94,9 +94,14 @@ export function omneoDevEnvironment(): Plugin {
     
     // Check if webhooks are already configured
     if (configManager.validateConfig(config)) {
-      console.log('✅ Webhooks already configured');
-      console.log(`📊 Found ${Object.keys(config.webhooks!).length} configured webhook events`);
-      await webhookManager.syncWebhooks(config, tunnelUrl!);
+      const webhookCount = Object.keys(config.webhooks || {}).length;
+      if (webhookCount > 0) {
+        console.log('✅ Webhooks already configured');
+        console.log(`📊 Found ${webhookCount} configured webhook events`);
+        await webhookManager.syncWebhooks(config, tunnelUrl!);
+      } else {
+        console.log('⏭️  No webhooks configured');
+      }
       
       // Check if clienteling config exists, if not prompt for setup
       let updatedConfig = config;

@@ -17,7 +17,7 @@
     "apps": [
       {
         "handle": "your-app-handle",
-        "development": true,
+        "development": false,
         "enabled": true,
         "fullscreen": true,
         "button": {

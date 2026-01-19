@@ -2,6 +2,123 @@
 
 A production-ready React Router template for building Omneo-powered clienteling applications with real-time webhook integration and customer profile management.
 
+## 🚀 Quick Start (5 Minutes)
+
+Get your Omneo clienteling app running in just a few steps:
+
+### Step 1: Clone and Install
+
+```bash
+git clone <your-repo>
+cd omneo-app-starter
+npm install
+```
+
+### Step 2: Set Up Your API Token
+
+Create a `.env` file in the root directory:
+
+```bash
+# .env
+OMNEO_TENANT=your-tenant-name
+OMNEO_API_TOKEN=your-api-token
+```
+
+Get your API token from the Omneo admin dashboard at Settings → API Tokens.
+
+### Step 3: Run the Setup Wizard
+
+Start the development server - it will automatically run a first-time setup wizard:
+
+```bash
+npm run dev
+```
+
+The setup wizard will guide you through:
+
+1. **Tenant Configuration** - Confirms your Omneo tenant settings
+2. **Webhook Setup** - Asks which webhook events you want to enable (profile.created, profile.updated, etc.)
+3. **Clienteling App Registration** - Interactive prompts:
+   - "Would you like to install a clienteling embedded app?" → Enter `y`
+   - "Enter button text" → e.g., `My App` (the label users will see)
+   - "Enter app title" → e.g., `My Omneo App` (displayed in the interface)
+   - "Enter app handle" → e.g., `my-demo-app` (unique identifier)
+
+### Step 4: Configuration Created
+
+After the wizard completes, you'll have:
+
+✅ `omneo.config.json` - Your app configuration  
+✅ Ngrok tunnel running (for local webhook testing)  
+✅ App registered in Omneo clienteling  
+✅ Webhooks configured and active
+
+Your terminal will display:
+```
+✅ Tunnel ready: https://your-unique-id.ngrok.io
+✅ Webhooks already configured
+📊 Found X configured webhook events
+✅ Clienteling app configured: My Omneo App
+```
+
+### Step 5: View Your App in Omneo
+
+1. Open your Omneo admin dashboard
+2. Navigate to Clienteling
+3. Look for your app button (labeled with your `button.label`)
+4. Click it to see your app embedded in the Omneo interface!
+
+Your app is now running at:
+- **Local Development:** `http://localhost:5173/clienteling` (for direct browser testing)
+- **Public URL (via ngrok):** `https://your-id.ngrok.io/clienteling` (automatically set in Omneo)
+- **In Omneo Platform:** Accessible at `/apps/your-app-handle`
+
+> **⚠️ Important: CORS and Testing**
+> 
+> Due to browser CORS security policies, the Omneo clienteling platform **cannot load apps from localhost**. When you test your app within the Omneo interface at `https://sandbox.clienteling.getomneo.com`, the browser blocks requests to `http://localhost` for security reasons.
+> 
+> **The ngrok tunnel solves this automatically:**
+> - Your code still runs locally on your machine
+> - The ngrok URL provides a public HTTPS endpoint
+> - The development server automatically updates your app configuration to use the ngrok URL
+> - No manual configuration needed - just refresh the Omneo interface after starting `npm run dev`
+> 
+> **Testing options:**
+> - ✅ **Within Omneo:** Use the app embedded in the clienteling interface (uses ngrok URL automatically)
+> - ✅ **Direct browser:** Visit `http://localhost:5173/clienteling` for local testing outside Omneo
+> - ✅ **Ngrok URL:** Visit `https://your-id.ngrok.io/clienteling` to test the public endpoint
+
+### What Happens Automatically?
+
+When you run `npm run dev` for the first time:
+
+1. **Ngrok Tunnel** - Creates a public HTTPS URL for your local server (required for Omneo integration)
+2. **App Registration** - Creates a custom field in Omneo with handle `app__your-handle`
+3. **URL Configuration** - Automatically replaces localhost URLs with the ngrok URL in your app settings
+4. **Webhook Registration** - Registers webhook endpoints with your tenant
+5. **Config Sync** - Saves all settings to `omneo.config.json`
+
+On subsequent runs, the dev server:
+- Detects existing configuration
+- Generates a new ngrok URL (URL changes each restart)
+- **Automatically updates your app URL** in Omneo to the new ngrok address
+- Syncs any configuration changes you've made
+- Skips unchanged settings
+
+> **💡 Tip:** The console output shows when localhost URLs are replaced:
+> ```
+> 🔄 Replacing localhost URL: http://localhost:5173/clienteling → https://abc123.ngrok.io/clienteling
+> ```
+
+### Next Steps
+
+- Edit `app/routes/clienteling/index.tsx` to customize your app UI
+- Add webhook handlers in `app/routes/api/$tenant.webhooks.omneo/events/`
+- Modify `omneo.config.json` to enable/disable webhooks
+- Add blocks to the `settings` array for modular components
+
+---
+
 ## Features
 
 - 🚀 **Server-side rendering** with React Router v7
@@ -36,7 +153,9 @@ plugins/                # Vite plugins for development
 └── omneo-dev-environment.ts # Automated Omneo setup
 ```
 
-## Getting Started
+## Detailed Setup Guide
+
+Already completed the Quick Start? This section provides additional details about the installation process.
 
 ### Prerequisites
 
@@ -44,7 +163,9 @@ plugins/                # Vite plugins for development
 - npm or yarn
 - Omneo account with API access
 
-### Installation
+### Manual Configuration
+
+If you prefer to configure manually instead of using the setup wizard:
 
 1. **Clone and install dependencies:**
 
@@ -236,9 +357,224 @@ OMNEO_API_TOKEN=your-api-token
 OMNEO_WEBHOOK_SECRET=your-webhook-secret
 ```
 
-## Configuration Files
+## Configuration
 
-- `omneo.config.json` - Omneo tenant and webhook settings
+### omneo.config.json
+
+The `omneo.config.json` file is the central configuration for your Omneo integration. It controls tenant settings, webhook subscriptions, and clienteling app registration.
+
+#### Configuration Structure
+
+```json
+{
+  "tenant": "your-tenant-name",
+  "namespace": "your-app-namespace",
+  "webhooks": {
+    "profile.created": true,
+    "profile.updated": true,
+    // Enable/disable specific webhook events
+  },
+  "clienteling": {
+    "apps": [
+      {
+        "handle": "your-app-handle",
+        "development": true,
+        "enabled": true,
+        "fullscreen": true,
+        "button": { "label": "My App" },
+        "title": "My Omneo App",
+        "clienteling": { "url": "http://localhost:5173/clienteling" },
+        "settings": []
+      }
+    ],
+    "enabled": true
+  }
+}
+```
+
+#### Configuration Options
+
+**Root Settings:**
+- `tenant` - Your Omneo tenant identifier
+- `namespace` - Unique namespace for your application (auto-generated if not set)
+- `lastSync` - Timestamp of last configuration sync with Omneo
+
+**Webhook Configuration:**
+- Enable/disable specific webhook events by setting them to `true`/`false`
+- Supported events:
+  - `profile.created` - Triggered when a new profile is created
+  - `profile.updated` - Triggered when a profile is updated
+  - `profile.merged` - Triggered when profiles are merged
+  - `profile.deleted` - Triggered when a profile is deleted
+  - `profile.address.*` - Address-related events
+  - `profile-temporary.created` - Temporary profile creation
+
+**Clienteling App Configuration:**
+- `handle` - Unique identifier for your app
+- `development` - Set to `true` for development mode (uses local URLs)
+- `enabled` - Enable/disable the app in the Omneo clienteling interface
+- `fullscreen` - Display app in fullscreen mode
+- `button.label` - Label shown on the app button in Omneo
+- `title` - App title displayed in the clienteling interface
+- `clienteling.url` - URL where your app is hosted (local or production)
+- `settings` - Array of configurable settings for your app
+
+**Adding Blocks to Clienteling Apps:**
+
+You can extend your clienteling app by adding blocks to the `settings` array. Blocks allow you to embed additional UI components within the Omneo clienteling interface at specific locations.
+
+Example configuration with a block:
+
+```json
+{
+  "handle": "your-app-handle",
+  "development": true,
+  "enabled": true,
+  "fullscreen": true,
+  "button": {
+    "label": "My App"
+  },
+  "title": "My Omneo App",
+  "clienteling": {
+    "url": "http://localhost:5173/clienteling"
+  },
+  "settings": [
+    {
+      "type": "block",
+      "use": "ExternalComponent",
+      "settings": {
+        "url": "http://localhost:5173/clienteling/block"
+      }
+    }
+  ]
+}
+```
+
+**Block Configuration Options:**
+- `type` - Must be `"block"` to define a block component
+- `use` - Component type, typically `"ExternalComponent"` for external URLs
+- `settings.url` - The URL where your block component is hosted
+
+**How Blocks Work:**
+- Blocks are embedded components that appear within the Omneo clienteling interface
+- They can be placed alongside customer profile data and other clienteling features
+- The URL should point to a route in your app that renders the block UI
+- In development, blocks use your ngrok tunnel URL for local testing
+- Multiple blocks can be added to the `settings` array
+- Each block is independently loaded and can have its own functionality
+
+**Block Use Cases:**
+- Display custom customer insights or analytics
+- Show specialized product recommendations
+- Add custom action buttons or forms
+- Embed third-party integrations
+- Create modular dashboard widgets
+
+#### How It Works
+
+1. **Development Environment:**
+   - The Omneo dev plugin reads this configuration on startup
+   - Creates an ngrok tunnel if `development: true`
+   - Registers webhook endpoints with your Omneo tenant
+   - Registers your clienteling app in the Omneo admin
+
+2. **Webhook Registration:**
+   - Only webhooks set to `true` are registered
+   - Webhook URLs are automatically generated using your namespace
+   - Webhooks route to `app/routes/api/$tenant.webhooks.omneo/route.ts`
+
+3. **Clienteling Integration:**
+   - Apps are registered in the Omneo clienteling interface
+   - Development apps use local URLs (with ngrok tunneling)
+   - Production apps use deployed URLs
+   - App appears as a button in the Omneo admin interface
+
+4. **App Detection & Synchronization:**
+   - On dev server startup, the plugin queries Omneo's tenant custom fields API
+   - Looks for existing apps using the namespace `clienteling.setting`
+   - Matches apps by their handle using the pattern `app__<your-handle>`
+   - Compares configuration to detect if updates are needed:
+     - Checks if title, button label, URL, or enabled status changed
+     - Detects changes in fullscreen or development mode settings
+   - Creates new apps or updates existing ones based on detection results
+   - Apps are stored as JSON custom fields in the Omneo tenant
+   - Displays sync summary showing created, updated, and skipped apps
+
+5. **Configuration Sync:**
+   - Changes to `omneo.config.json` are detected on dev server restart
+   - Configuration is automatically synced with your Omneo tenant
+   - `lastSync` timestamp is updated after successful sync
+
+#### Detection Process Details
+
+When you run `npm run dev`, the following detection flow occurs:
+
+1. **Fetch Existing Apps:**
+   ```
+   GET /tenants/custom-fields?filter[namespace]=clienteling.setting
+   ```
+   This retrieves all clienteling apps registered in your tenant.
+
+2. **Match by Handle:**
+   - Your app's `handle` from config (e.g., `"omneo-demo-app"`)
+   - Gets prefixed to create the lookup key: `app__omneo-demo-app`
+   - Plugin searches existing apps for a matching handle
+   - The `app__` prefix is a convention used by Omneo's clienteling system to identify embedded apps
+
+3. **App Loading in Omneo Clienteling:**
+   - Omneo clienteling searches for apps with the `app__` prefix in tenant custom fields
+   - Apps are loaded at the route pattern: `{clientelingurl}/apps/{yourappname}`
+   - Example: If your app handle is `omneo-demo-app`, Omneo loads it from:
+     ```
+     http://localhost:5173/apps/omneo-demo-app
+     ```
+   - The clienteling interface automatically discovers and renders all apps with the `app__` prefix
+   - Each app appears as a button in the Omneo UI based on the `button.label` configuration
+
+4. **Comparison Logic:**
+   - If match found: Compares all properties to detect changes
+   - If no changes: Skips update (displays "⏭️ Skipped")
+   - If changes detected: Updates app (displays "🔄 Updated")
+   - If no match: Creates new app (displays "✅ Created")
+
+5. **API Operations:**
+   - **Create:** `POST /tenants/custom-fields` with app configuration
+   - **Update:** `PUT /tenants/custom-fields/clienteling.setting:<handle>` with new values
+
+This detection system ensures your local configuration stays in sync with Omneo without manual intervention.
+
+#### Setup Instructions
+
+1. **Copy the example configuration:**
+   ```bash
+   cp omneo.config.json.example omneo.config.json
+   ```
+
+2. **Update your tenant settings:**
+   - Set your `tenant` name
+   - Customize the `namespace` (or let it auto-generate)
+   - Update the app `handle` and `title`
+
+3. **Configure webhooks:**
+   - Enable only the webhook events your app needs
+   - This reduces unnecessary webhook traffic
+
+4. **Start development:**
+   ```bash
+   npm run dev
+   ```
+   The plugin will automatically register your configuration with Omneo.
+
+#### Best Practices
+
+- **Keep `omneo.config.json` out of version control** if it contains sensitive data
+- Use `omneo.config.json.example` as a template for team members
+- Only enable webhooks your application actually uses
+- Use descriptive `handle` and `namespace` values for easier identification
+- Set `development: false` when deploying to production
+
+### Other Configuration Files
+
 - `components.json` - Shadcn/ui component configuration
 - `react-router.config.ts` - React Router configuration
 - `vite.config.ts` - Vite build configuration

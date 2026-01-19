@@ -64,7 +64,7 @@ export class OmneoClientelingManager extends OmneoBaseManager {
       // Create app configuration
       const newApp: ClientelingApp = {
         handle: appHandle,
-        development: true,
+        development: false,
         enabled: true,
         fullscreen: true,
         button: {
