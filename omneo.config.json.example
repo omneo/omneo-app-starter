@@ -1,0 +1,35 @@
+{
+  "tenant": "your-tenant-name",
+  "namespace": "your-app-namespace",
+  "webhooks": {
+    "profile.created": true,
+    "profile-temporary.created": true,
+    "profile.updated": true,
+    "profile.merged": true,
+    "profile.before.update": true,
+    "profile.deleted": true,
+    "profile.address.created": true,
+    "profile.address.updated": true,
+    "profile.address.deleted": true
+  },
+  "lastSync": "2025-01-01T00:00:00.000Z",
+  "clienteling": {
+    "apps": [
+      {
+        "handle": "your-app-handle",
+        "development": true,
+        "enabled": true,
+        "fullscreen": true,
+        "button": {
+          "label": "My App"
+        },
+        "title": "My Omneo App",
+        "clienteling": {
+          "url": "http://localhost:5173/clienteling"
+        },
+        "settings": []
+      }
+    ],
+    "enabled": true
+  }
+}
