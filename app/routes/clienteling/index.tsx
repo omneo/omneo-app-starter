@@ -1,15 +1,27 @@
 import { useClientelingContext, useOmneoClient } from '~/contexts/auth/authContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
-import { MapPin, Calendar, DollarSign, ShoppingCart, AlertCircle, ArrowLeft } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, ShoppingCart, AlertCircle, ArrowLeft, ShieldCheck, ShieldX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Transaction } from '@omneo/omneo-sdk';
+import { apiFetch } from '~/lib/api-fetch';
+
+type ApiCheck = 'checking' | 'ok' | 'failed';
 
 export default function Clienteling() {
   const { location } = useClientelingContext();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const client = useOmneoClient();
+  const [apiCheck, setApiCheck] = useState<ApiCheck>('checking');
+
+  // Calls the app's own protected API route (app/routes/api/me.ts) with apiFetch, which
+  // sends the staff token for server-side re-verification. Confirms a fresh deploy end to end.
+  useEffect(() => {
+    apiFetch('/api/me')
+      .then((res) => setApiCheck(res.ok ? 'ok' : 'failed'))
+      .catch(() => setApiCheck('failed'));
+  }, []);
 
   useEffect(() => {
     if (!location?.id) return;
@@ -69,6 +81,11 @@ export default function Clienteling() {
           <p className="text-muted-foreground">
             Current location transactions and details
           </p>
+          <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+            {apiCheck === 'failed' ? <ShieldX className="h-4 w-4 text-destructive" /> : <ShieldCheck className="h-4 w-4" />}
+            Server check
+            <Badge variant={apiCheck === 'failed' ? 'destructive' : 'secondary'}>{apiCheck}</Badge>
+          </div>
         </div>
 
         {/* Current Location Card */}

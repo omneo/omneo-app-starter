@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Omneo } from '@omneo/omneo-sdk';
-import { 
+import { setClientelingToken } from '~/lib/clienteling-token';
+import {
   setupClientelingContextListener, 
   type ClientelingContext, 
   type TokenValidationResult 
@@ -44,9 +45,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Function to handle authentication
   const handleAuthentication = async (validationResult: TokenValidationResult, context: ClientelingContext) => {
-    console.log('Authentication attempt:', { validationResult, context });
-
     if (validationResult.isValid) {
+      // Publish the verified staff token so API calls can carry it for
+      // server-side re-verification (see lib/clienteling-auth).
+      setClientelingToken(context.authentication?.token ?? null);
+
       // Use the client from validation result if available, otherwise create one
       let client: Omneo | null = validationResult.client || null;
       
@@ -68,6 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         client,
       });
     } else {
+      setClientelingToken(null);
       setAuthState({
         isAuthenticated: false,
         isLoading: false,

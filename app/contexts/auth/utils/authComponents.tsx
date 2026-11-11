@@ -74,6 +74,8 @@ export function UnauthorizedAccessScreen() {
 export function requestContextFromParent() {
   console.log('Requesting context from parent...');
   if (window.parent !== window) {
+    // '*' is safe here: the request carries no data, and the reply is
+    // origin-checked on receive (see isOmneoOrigin)
     window.parent.postMessage({ type: 'REQUEST_CLIENTELING_CONTEXT' }, '*');
   }
 }

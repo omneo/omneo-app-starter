@@ -27,8 +27,9 @@ This is a production-ready React Router v7 template for building Omneo-powered c
 
 ### Tech Stack
 - **Framework**: React Router v7 (with SSR)
-- **Runtime**: Node.js 20+
-- **Language**: TypeScript 5.x
+- **Runtime**: Node.js 26
+- **Language**: TypeScript 6.x
+- **Testing**: Vitest + React Testing Library (happy-dom)
 - **Styling**: Tailwind CSS v4 with Radix UI
 - **API Client**: @omneo/omneo-sdk
 - **Build Tool**: Vite 7.x
@@ -52,7 +53,7 @@ This is a production-ready React Router v7 template for building Omneo-powered c
 ### Prerequisites
 ```bash
 # Required
-- Node.js 18+ (20+ recommended)
+- Node.js 26
 - npm or yarn
 - Omneo account with API access
 ```
@@ -1003,7 +1004,7 @@ export function setupClientelingContextListener(
 ```bash
 # .env (not committed)
 OMNEO_TENANT=tenant-name
-OMNEO_API_TOKEN=secret-token
+OMNEO_TOKEN=secret-token
 OMNEO_SECRET=webhook-secret
 ```
 
@@ -1032,6 +1033,18 @@ if (!validationResult.isValid) {
   // Handle invalid token
 }
 ```
+
+5. **API routes re-verify the staff token server-side**: the UI gate is cosmetic. Every
+`/api/*` route except `/api/health` and webhooks starts with:
+```typescript
+const denied = await requireClientelingAuth(request); // ~/lib/clienteling-auth
+if (denied) return denied;
+```
+and the client calls it with `apiFetch` / `apiJson` from `~/lib/api-fetch`, which send the
+token in the `x-omneo-token` header.
+
+6. **Never log tokens or the clienteling context**, and only accept `postMessage` context
+from `*.getomneo.com` (`isOmneoOrigin` in `contexts/auth/utils`).
 
 ---
 
@@ -1179,6 +1192,16 @@ import { MapPin, Calendar, DollarSign, AlertCircle } from 'lucide-react';
 ---
 
 ## Testing & Validation
+
+### Unit Tests
+
+```bash
+npm test          # Vitest, watch mode
+npm run test:run  # once, as CI does (.github/workflows/ci.yml)
+```
+
+Tests sit next to the code (`*.test.ts(x)`); `test/setup.ts` adds jest-dom matchers and
+browser mocks. CI runs typecheck, tests and build on every pull request.
 
 ### TypeScript Type Checking
 

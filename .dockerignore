@@ -1,4 +1,21 @@
-.react-router
-build
+# Keep the build context small and avoid baking secrets / artefacts into layers.
 node_modules
-README.md
+build
+.react-router
+coverage
+.vitest
+
+# Secrets and local config
+.env
+.env.*
+omneo.config.json
+
+# VCS and editor
+.git
+.gitignore
+.idea
+.vscode
+
+# Logs and OS cruft
+*.log
+.DS_Store

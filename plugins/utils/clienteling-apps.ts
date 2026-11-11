@@ -72,7 +72,8 @@ export class OmneoClientelingManager extends OmneoBaseManager {
         },
         title: title,
         clienteling: {
-          url: "http://localhost:5173/clienteling"
+          url: "http://localhost:5173/clienteling",
+          sandbox: "allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals"
         },
         settings: []
       };
@@ -212,6 +213,7 @@ export class OmneoClientelingManager extends OmneoBaseManager {
       existingValue.title !== newApp.title ||
       existingValue.button?.label !== newApp.button.label ||
       existingValue.clienteling?.url !== newApp.clienteling.url ||
+      existingValue.clienteling?.sandbox !== newApp.clienteling.sandbox ||
       existingValue.enabled !== newApp.enabled ||
       existingValue.fullscreen !== newApp.fullscreen ||
       existingValue.development !== newApp.development
@@ -232,7 +234,10 @@ export class OmneoClientelingManager extends OmneoBaseManager {
         },
         title: app.title,
         clienteling: {
-          url: app.clienteling.url
+          url: app.clienteling.url,
+          ...(app.clienteling.sandbox
+            ? { sandbox: app.clienteling.sandbox }
+            : {}),
         },
         settings: app.settings
       },
@@ -260,7 +265,10 @@ export class OmneoClientelingManager extends OmneoBaseManager {
         },
         title: app.title,
         clienteling: {
-          url: app.clienteling.url
+          url: app.clienteling.url,
+          ...(app.clienteling.sandbox
+            ? { sandbox: app.clienteling.sandbox }
+            : {}),
         },
         settings: app.settings
       },
