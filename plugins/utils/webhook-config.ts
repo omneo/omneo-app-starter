@@ -123,6 +123,7 @@ export interface ClientelingApp {
   title: string;
   clienteling: {
     url: string;
+    sandbox?: string;
   };
   settings: any[];
 }

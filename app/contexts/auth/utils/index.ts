@@ -18,6 +18,20 @@ export interface ClientelingContext {
     user: any | null;
     expiry: number | null;
   };
+  /** The host page's query string (for example `locationId`, or an `app`
+   * to open), when the host provides it. */
+  queryParams?: Record<string, string>;
+}
+
+/** Keeps only string values, the way a parsed query string arrives. */
+export function normaliseQueryParams(input: unknown): Record<string, string> | undefined {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    if (typeof value === 'string') out[key] = value;
+    else if (Array.isArray(value) && typeof value[0] === 'string') out[key] = value[0];
+  }
+  return out;
 }
 
 export interface TokenValidationResult {
@@ -27,13 +41,31 @@ export interface TokenValidationResult {
   client?: Omneo;
 }
 
+/**
+ * Validates if an origin is from Omneo (any subdomain of getomneo.com)
+ */
+export function isOmneoOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    return url.hostname === 'getomneo.com' || url.hostname.endsWith('.getomneo.com');
+  } catch {
+    return false;
+  }
+}
 
 export function setupClientelingContextListener(
   onValidation?: (result: TokenValidationResult, context: ClientelingContext) => void
 ): () => void {
   const messageHandler = async (event: MessageEvent) => {
-    // Only process messages from parent window
+    // Security: Only process messages from parent window
     if (event.source !== window.parent) {
+      return;
+    }
+
+    // Security: the context carries a staff token, so only accept it from
+    // the Omneo clienteling host (*.getomneo.com)
+    if (!isOmneoOrigin(event.origin)) {
+      console.warn('Ignored message from non-Omneo origin:', event.origin);
       return;
     }
 
@@ -54,13 +86,12 @@ export function setupClientelingContextListener(
           location: message.data.location,
           environment: message.data.environment,
           authentication: message.data.authentication,
+          queryParams: normaliseQueryParams(message.data.queryParams),
         };
       } else {
         // New format - use as is
-        context = message as ClientelingContext;
+        context = { ...(message as ClientelingContext), queryParams: normaliseQueryParams(message.queryParams) };
       }
-      
-      console.log('Received clienteling context:', context);
 
       // Extract authentication details
       const { token } = context.authentication;
@@ -80,9 +111,11 @@ export function setupClientelingContextListener(
               isValid: response.status === 200,
               client: response.status === 200 ? client : undefined
             }
-        })
-        
-        console.log('Token validation result:', validationResult);
+        }).catch((): TokenValidationResult => ({
+          isValid: false,
+          error: 'Unable to verify your clienteling session'
+        }))
+
 
         // Call the callback if provided
         if (onValidation) {

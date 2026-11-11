@@ -131,6 +131,8 @@ On subsequent runs, the dev server:
 - � **Customer Analytics Dashboard** with aggregations
 - 🛡️ **Authentication Context** with Omneo profile management
 - 📋 **Structured Logging** with Google Cloud integration
+- 🔐 **Server-side token check** on every API route (`requireClientelingAuth`)
+- 🧪 **Vitest** with React Testing Library, and a CI workflow for pull requests
 
 ## Architecture
 
@@ -159,7 +161,7 @@ Already completed the Quick Start? This section provides additional details abou
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 26 (see `engines` in package.json; `nvm install 26`)
 - npm or yarn
 - Omneo account with API access
 
@@ -254,6 +256,32 @@ const client = useOmneoClient();
 - Profile and location management
 - Authentication state handling
 - Type-safe SDK access
+- The clienteling context is only accepted from the Omneo host (`*.getomneo.com`), and a
+  failed token check shows the error instead of loading forever
+
+### Protecting your API routes
+
+The front-end token check only gates the UI. Anyone can call `/api/*` directly, so every
+API route (other than `/api/health` and webhooks) must re-verify the staff token on the server:
+
+```typescript
+// app/routes/api/my-route.ts
+import { requireClientelingAuth } from '~/lib/clienteling-auth';
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const denied = await requireClientelingAuth(request);
+  if (denied) return denied;
+  // ...
+};
+```
+
+From the browser, call your routes with `apiFetch` (or `apiJson` for JSON with typed errors)
+from `~/lib/api-fetch`. They send the verified staff token in the `x-omneo-token` header.
+Verification is cached briefly per token, and a token that verified recently still works
+through a short Omneo outage. `/api/me` is a working example, and the dashboard's
+"Server check" badge calls it.
+
+`/api/health` is an unauthenticated liveness check for deploy smoke tests and uptime checks.
 
 ## UI Components
 
@@ -308,6 +336,8 @@ npm run dev        # Start development server
 npm run build      # Build for production
 npm run start      # Start production server
 npm run typecheck  # Run TypeScript checks
+npm test           # Run Vitest in watch mode
+npm run test:run   # Run the tests once (what CI runs)
 ```
 
 ## Building for Production
@@ -328,6 +358,9 @@ build/
 ## Deployment
 
 ### Docker Deployment
+
+The Dockerfile builds on `node:26-alpine`. Cloud Run (and most hosts) inject `$PORT`, which
+`react-router-serve` honours.
 
 ```bash
 # Build the Docker image
@@ -353,8 +386,8 @@ Configure these for production:
 
 ```bash
 OMNEO_TENANT=your-tenant
-OMNEO_API_TOKEN=your-api-token
-OMNEO_WEBHOOK_SECRET=your-webhook-secret
+OMNEO_TOKEN=your-api-token
+OMNEO_SECRET=your-webhook-secret
 ```
 
 ## Configuration

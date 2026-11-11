@@ -1,8 +1,33 @@
-.DS_Store
+# Environment variables
 .env
-/node_modules/
+.env.*
+!.env.example
 
-# React Router
-/.react-router/
-/build/
+# Omneo configuration (contains tenant-specific settings)
 omneo.config.json
+
+# Dependencies
+node_modules/
+
+# Build outputs
+build/
+.react-router/
+dist/
+
+# Test coverage
+coverage/
+.vitest/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

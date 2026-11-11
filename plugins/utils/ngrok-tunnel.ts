@@ -2,6 +2,7 @@ export interface NgrokConfig {
   addr: number;
   region: string;
   authtoken?: string;
+  domain?: string;
 }
 
 export interface NgrokTunnelResult {
@@ -20,6 +21,7 @@ export async function startNgrokTunnel(port: number): Promise<NgrokTunnelResult>
 
     // Check for authtoken
     const authtoken = process.env.NGROK_AUTHTOKEN;
+    const domain = process.env.VITE_NGROK_DOMAIN;
     if (!authtoken) {
       console.log('⚠️  No NGROK_AUTHTOKEN found in environment variables');
       console.log('💡 To get an authenticated tunnel:');
@@ -40,6 +42,11 @@ export async function startNgrokTunnel(port: number): Promise<NgrokTunnelResult>
     if (authtoken) {
       tunnelConfig.authtoken = authtoken;
       console.log('🔐 Using authenticated ngrok session');
+    }
+
+    if (domain) {
+      tunnelConfig.domain = domain;
+      console.log(`🔗 Using reserved ngrok domain: ${domain}`);
     }
 
     const listener = await ngrok.forward(tunnelConfig);

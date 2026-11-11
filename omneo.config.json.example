@@ -25,7 +25,8 @@
         },
         "title": "My Omneo App",
         "clienteling": {
-          "url": "http://localhost:5173/clienteling"
+          "url": "http://localhost:5173/clienteling",
+          "sandbox": "allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals"
         },
         "settings": []
       }

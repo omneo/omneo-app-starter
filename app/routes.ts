@@ -6,10 +6,9 @@ export default [
   route("/clienteling/block", "routes/clienteling/block.tsx"),
   
   // API Routes - these are NOT wrapped by auth context and can handle their own authentication
+  // Every route other than health and webhooks must call requireClientelingAuth.
   route("/api/:tenant/webhooks/omneo", "routes/api/$tenant.webhooks.omneo/route.ts"),
-  // route("/api/users", "routes/api.users.ts"),
-  // route("/api/users/:userId", "routes/api.users.$userId.ts"),
-  // route("/api/products", "routes/api.products.ts"),
-  // route("/api/auth/verify", "routes/api.auth.verify.ts"),
+  route("/api/health", "routes/api/health.ts"),
+  route("/api/me", "routes/api/me.ts"),
   // ... add more API routes as needed
 ] satisfies RouteConfig;
